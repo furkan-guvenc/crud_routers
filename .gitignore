@@ -1,0 +1,7 @@
+**/target/
+.idea/
+
+**/diesel.toml
+**/.env
+**/migrations/
+
