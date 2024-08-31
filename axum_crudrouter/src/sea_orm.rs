@@ -10,11 +10,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub struct SeaOrmCRUDRouter<Entity>
-where
-    Entity: EntityTrait,
-    Entity::Model: ModelTrait<Entity=Entity> + Serialize + IntoActiveModel<Entity::ActiveModel> + TryFrom<Entity::ActiveModel> + DeserializeOwned + Send,
-    Entity::ActiveModel: ActiveModelTrait<Entity=Entity> + From<Entity::Model> + TryIntoModel<Entity::Model> + Send,
-    <Entity::PrimaryKey as PrimaryKeyTrait>::ValueType: DeserializeOwned + Clone,
 {
     connection: DatabaseConnection,
     _entity: PhantomData<Entity>
