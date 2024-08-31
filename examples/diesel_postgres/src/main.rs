@@ -9,7 +9,6 @@ use axum::extract::{Path, State};
 use axum::routing::get;
 use diesel_postgres::models::{NewPost, Post, PostForm};
 use diesel_postgres::schema::posts::dsl::posts;
-use diesel_postgres::schema::posts::published;
 
 
 #[axum::debug_handler]
@@ -20,7 +19,6 @@ async fn list_posts_route(
     let mut state = state.lock().unwrap();
 
     posts
-        .filter(published.eq(false))
         .select(Post::as_select())
         .load(&mut state.connection)
         .expect("Error loading posts")
@@ -66,10 +64,8 @@ async fn get_post_route(
     let mut state = state.lock().unwrap();
 
     posts
-        .filter(posts::id.eq(id))
-        .limit(1)
-        .select(Post::as_select())
-        .get_result(&mut state.connection)
+        .find(id)
+        .first(&mut state.connection)
         .optional()
         .unwrap()
         .into()
@@ -86,8 +82,7 @@ async fn update_post_route(
 
     let mut state = state.lock().unwrap();
 
-    diesel::update(posts::table)
-        .filter(posts::id.eq(id))
+    diesel::update(posts::table.find(id))
         .set(post)
         .returning(Post::as_returning())
         .get_result(&mut state.connection)
@@ -101,10 +96,8 @@ async fn delete_post_route(
     State(state): State<Arc<Mutex<AppState>>>,
     Path(id): Path<i32>
 ) {
-    use diesel_postgres::schema::posts;
-
     let mut state = state.lock().unwrap();
-    diesel::delete(posts.filter(posts::id.eq(id)))
+    diesel::delete(posts.find(id))
         .execute(&mut state.connection)
         .expect("Error deleting posts");
 }
