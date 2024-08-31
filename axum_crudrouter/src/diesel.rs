@@ -1,4 +1,3 @@
-use crate::CRUDGenerator;
 use axum::extract::{Path, State};
 use axum::{Json, Router};
 use diesel::associations::HasTable;
@@ -16,15 +15,12 @@ use diesel::sql_types::SingleValue;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use axum::routing::get;
-use tokio::sync::Mutex;
+use serde::Serialize;
 
 
 struct DieselCRUDRouter<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema>
-where
-    DBConnection: Connection,
-    SchemaTable: Table + Copy
 {
     connection: DBConnection,
     table: SchemaTable,
@@ -33,11 +29,40 @@ where
 
 impl<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema> DieselCRUDRouter<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema>
 where
-    DBConnection: Connection,
-    SchemaTable: Table + Copy
-{
+    DBConnection: Connection + LoadConnection + Clone + 'static,
+    SchemaTable: AsQuery<Query=SelectStatement<FromClause<SchemaTable>>> + QueryFragment<DBConnection::Backend> + StaticQueryFragment + Table + QueryId + Copy + Send + 'static,
 
-    pub fn build(connection: DBConnection, app: Router, table: SchemaTable) -> Router {
+    // for list_items_route
+    SchemaTable: SelectDsl<AsSelect<Schema, DBConnection::Backend>>,
+    Schema: SelectableHelper<DBConnection::Backend> + Serialize + Send + 'static,
+    Schema::SelectExpression: QueryId,
+    Select<SchemaTable, AsSelect<Schema, DBConnection::Backend>>: Table + Expression,
+    for<'a> Select<SchemaTable, AsSelect<Schema, DBConnection::Backend>>: LoadQuery<'a, DBConnection, Schema>,
+
+    // for get_item_route
+    SchemaTable: LimitDsl + FindDsl<SchemaTable::PrimaryKey>,
+    Find<SchemaTable, SchemaTable::PrimaryKey>: LimitDsl + Table,
+    for<'a> Limit<Find<SchemaTable, SchemaTable::PrimaryKey>>: LoadQuery<'a, DBConnection, Schema>,
+
+    // for create_item_route
+    CreateSchema: DeserializeOwned + Insertable<SchemaTable> + Send + 'static,
+    for<'a> InsertStatement<SchemaTable, CreateSchema::Values>: AsQuery + LoadQuery<'a, DBConnection, Schema>,
+
+    // for update_item_route
+    UpdateSchema: DeserializeOwned + AsChangeset<Target=SchemaTable> + Send + 'static,
+    Find<SchemaTable, SchemaTable::PrimaryKey>: HasTable<Table=SchemaTable> + IntoUpdateTarget,
+    for<'a> Update<Find<SchemaTable, SchemaTable::PrimaryKey>, UpdateSchema>: AsQuery + LoadQuery<'a, DBConnection, Schema>,
+
+    // for delete_item_route
+    SchemaTable::PrimaryKey: SelectableExpression<SchemaTable> + ValidGrouping<()> + DeserializeOwned + Send + 'static,
+    SqlTypeOf<SchemaTable::PrimaryKey>: SingleValue,
+    delete<Find<SchemaTable, SchemaTable::PrimaryKey>>: ExecuteDsl<DBConnection>,
+
+    // for delete_all_items_route
+    SchemaTable: IntoUpdateTarget,
+    delete<SchemaTable>: ExecuteDsl<DBConnection>
+{
+    pub fn build(connection: DBConnection, table: SchemaTable) -> Router {
         let shared_state = Arc::new(Mutex::new(Self {
             connection,
             table,
@@ -49,46 +74,9 @@ where
             .route("/:id", get(Self::get_item_route).put(Self::update_item_route).delete(Self::delete_item_route))
             .with_state(shared_state)
     }
-}
 
-
-impl<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema> CRUDGenerator<Schema, SchemaTable::PrimaryKey> for DieselCRUDRouter<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema>
-where
-    DBConnection: Connection + LoadConnection,
-    SchemaTable: AsQuery<Query=SelectStatement<FromClause<SchemaTable>>> + QueryFragment<DBConnection::Backend> + StaticQueryFragment + Table + QueryId + Copy,
-
-    // for list_items_route
-    SchemaTable: SelectDsl<AsSelect<Schema, DBConnection::Backend>>,
-    Schema: SelectableHelper<DBConnection::Backend>,
-    Schema::SelectExpression: QueryId,
-    Select<SchemaTable, AsSelect<Schema, DBConnection::Backend>>: Table + Expression,
-    for<'a> Select<SchemaTable, AsSelect<Schema, DBConnection::Backend>>: LoadQuery<'a, DBConnection, Schema>,
-
-    // for get_item_route
-    SchemaTable: LimitDsl + FindDsl<SchemaTable::PrimaryKey>,
-    Find<SchemaTable, SchemaTable::PrimaryKey>: LimitDsl + Table,
-    for<'a> Limit<Find<SchemaTable, SchemaTable::PrimaryKey>>: LoadQuery<'a, DBConnection, Schema>,
-
-    // for create_item_route
-    CreateSchema: DeserializeOwned + Insertable<SchemaTable>,
-    for<'a> InsertStatement<SchemaTable, CreateSchema::Values>: AsQuery + LoadQuery<'a, DBConnection, Schema>,
-
-    // for update_item_route
-    UpdateSchema: DeserializeOwned + AsChangeset<Target=SchemaTable>,
-    Find<SchemaTable, SchemaTable::PrimaryKey>: HasTable<Table=SchemaTable> + IntoUpdateTarget,
-    for<'a> Update<Find<SchemaTable, SchemaTable::PrimaryKey>, UpdateSchema>: AsQuery + LoadQuery<'a, DBConnection, Schema>,
-
-    // for delete_item_route
-    SchemaTable::PrimaryKey: SelectableExpression<SchemaTable> + ValidGrouping<()>,
-    SqlTypeOf<SchemaTable::PrimaryKey>: SingleValue,
-    delete<Find<SchemaTable, SchemaTable::PrimaryKey>>: ExecuteDsl<DBConnection>,
-
-    // for delete_all_items_route
-    SchemaTable: IntoUpdateTarget,
-    delete<SchemaTable>: ExecuteDsl<DBConnection>
-{
     async fn list_items_route(state: State<Arc<Mutex<Self>>>) -> Json<Vec<Schema>> {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
             state.table.select(Schema::as_select())
             .load::<Schema>(&mut state.connection)
@@ -97,7 +85,7 @@ where
     }
 
     async fn get_item_route(state: State<Arc<Mutex<Self>>>, Path(id): Path<SchemaTable::PrimaryKey>) -> Json<Option<Schema>> {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
         state.table
             .find(id)
@@ -108,7 +96,7 @@ where
     }
 
     async fn create_item_route(state: State<Arc<Mutex<Self>>>, Json(new_item_json): Json<Value>) -> Json<Schema> {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
         let new_item = <CreateSchema>::deserialize(new_item_json).unwrap();
 
@@ -120,7 +108,7 @@ where
     }
 
     async fn update_item_route(state: State<Arc<Mutex<Self>>>, Path(id): Path<SchemaTable::PrimaryKey>, Json(item_json): Json<Value>) -> Json<Schema> {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
         let item = <UpdateSchema>::deserialize(item_json).unwrap();
 
@@ -132,7 +120,7 @@ where
     }
 
     async fn delete_item_route(state: State<Arc<Mutex<Self>>>, Path(id): Path<SchemaTable::PrimaryKey>) {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
         diesel::delete(state.table.find(id))
             .execute(&mut state.connection)
@@ -140,7 +128,7 @@ where
     }
 
     async fn delete_all_items_route(state: State<Arc<Mutex<Self>>>) -> Json<usize> {
-        let mut state = state.lock().await;
+        let mut state = state.lock().unwrap();
 
         diesel::delete(state.table)
             .execute(&mut state.connection)
