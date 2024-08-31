@@ -7,6 +7,7 @@ mod diesel;
 mod sea_orm;
 
 pub use sea_orm::SeaOrmCRUDRouter;
+pub use diesel::DieselCRUDRouter;
 
 trait CRUDGenerator<Schema, PrimaryKeyType> {
 

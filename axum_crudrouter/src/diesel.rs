@@ -20,7 +20,7 @@ use axum::routing::get;
 use serde::Serialize;
 
 
-struct DieselCRUDRouter<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema>
+pub struct DieselCRUDRouter<DBConnection, SchemaTable, Schema, CreateSchema, UpdateSchema>
 {
     connection: DBConnection,
     table: SchemaTable,
