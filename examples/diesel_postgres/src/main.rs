@@ -3,105 +3,10 @@ use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
-use axum::{Json, Router};
-use axum::extract::{Path, State};
-use axum::routing::get;
+use axum::Router;
+use axum_crudrouter::diesel::DieselCRUDRouter;
 use diesel_postgres::models::{NewPost, Post, PostForm};
-use diesel_postgres::schema::posts::dsl::posts;
-
-
-#[axum::debug_handler]
-async fn list_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>
-) -> Json<Vec<Post>> {
-
-    let mut state = state.lock().unwrap();
-
-    posts
-        .select(Post::as_select())
-        .load(&mut state.connection)
-        .expect("Error loading posts")
-        .into()
-}
-
-#[axum::debug_handler]
-async fn create_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Json(new_post): Json<NewPost>
-) -> Json<Post> {
-    use diesel_postgres::schema::posts;
-
-    let mut state = state.lock().unwrap();
-
-    diesel::insert_into(posts::table)
-        .values(&new_post)
-        .returning(Post::as_returning())
-        .get_result(&mut state.connection)
-        .expect("Error saving new post")
-        .into()
-}
-
-#[axum::debug_handler]
-async fn delete_all_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>
-) -> Json<usize> {
-    let mut state = state.lock().unwrap();
-
-    diesel::delete(posts)
-        .execute(&mut state.connection)
-        .expect("Error deleting posts")
-        .into()
-}
-
-
-#[axum::debug_handler]
-async fn get_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>
-) -> Json<Option<Post>> {
-    use diesel_postgres::schema::posts;
-    let mut state = state.lock().unwrap();
-
-    posts
-        .find(id)
-        .first(&mut state.connection)
-        .optional()
-        .unwrap()
-        .into()
-
-}
-
-#[axum::debug_handler]
-async fn update_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>,
-    Json(post): Json<PostForm>,
-) -> Json<Post> {
-    use diesel_postgres::schema::posts;
-
-    let mut state = state.lock().unwrap();
-
-    diesel::update(posts::table.find(id))
-        .set(post)
-        .returning(Post::as_returning())
-        .get_result(&mut state.connection)
-        .expect("Updating the post")
-        .into()
-}
-
-
-#[axum::debug_handler]
-async fn delete_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>
-) {
-    let mut state = state.lock().unwrap();
-    diesel::delete(posts.find(id))
-        .execute(&mut state.connection)
-        .expect("Error deleting posts");
-}
-
+use diesel_postgres::schema::posts;
 
 
 pub fn establish_connection() -> PgConnection {
@@ -129,12 +34,7 @@ async fn main() {
 async fn get_app() -> Router {
     let connection = establish_connection();
 
-    let shared_state = Arc::new(Mutex::new(AppState { connection }));
-
-    Router::new()
-        .route("/", get(list_posts_route).post(create_posts_route).delete(delete_all_posts_route))
-        .route("/:id", get(get_post_route).put(update_post_route).delete(delete_post_route))
-        .with_state(shared_state)
+    DieselCRUDRouter::<PgConnection, posts::table, Post, i32, NewPost, PostForm>::build(connection, posts::table)
 }
 
 #[cfg(test)]
