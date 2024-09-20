@@ -4,7 +4,7 @@ use dotenvy::dotenv;
 use std::env;
 use std::net::SocketAddr;
 use axum::Router;
-use axum_crudrouter::diesel::DieselCRUDRouter;
+use axum_crudrouter::{AxumServer, CRUDRepository, DieselRepository};
 use diesel_postgres::models::{NewPost, Post, PostForm};
 use diesel_postgres::schema::posts;
 
@@ -17,9 +17,6 @@ pub fn establish_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-struct AppState {
-    connection: PgConnection
-}
 
 #[tokio::main]
 async fn main() {
@@ -34,7 +31,12 @@ async fn main() {
 async fn get_app() -> Router {
     let connection = establish_connection();
 
-    DieselCRUDRouter::<PgConnection, posts::table, Post, i32, NewPost, PostForm>::build(connection, posts::table)
+    DieselRepository::new(connection, posts::table)
+        .create_router_for::<AxumServer>()
+        .schema::<Post, i32>()
+        .create_schema::<NewPost>()
+        .update_schema::<PostForm>()
+        .build_router()
 }
 
 #[cfg(test)]

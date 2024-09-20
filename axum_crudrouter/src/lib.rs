@@ -1,42 +1,52 @@
-use axum::extract::{Path, State};
-use axum::Json;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::marker::PhantomData;
 
-mod diesel;
-mod sea_orm;
+mod servers;
+pub mod repositories;
+pub use repositories::*;
+pub use servers::AxumServer;
 
-pub use sea_orm::SeaOrmCRUDRouter;
-pub use diesel::DieselCRUDRouter;
+use crate::servers::ApiServer;
 
-trait CRUDGenerator<Schema, PrimaryKeyType> {
+pub struct NotGiven;
+pub struct Given<T>{
+    _marker: PhantomData<T>
+}
 
-    async fn list_items_route(
-        state: State<Arc<Mutex<Self>>>
-    ) -> Json<Vec<Schema>>;
+pub trait OptionalSchema{}
 
-    async fn get_item_route(
-        state: State<Arc<Mutex<Self>>>,
-        id: Path<PrimaryKeyType>
-    ) -> Json<Option<Schema>>;
+impl OptionalSchema for NotGiven{}
+impl<T> OptionalSchema for Given<T>{}
 
-    async fn create_item_route(
-        state: State<Arc<Mutex<Self>>>,
-        new_item_json: Json<serde_json::Value>
-    ) -> Json<Schema>;
+pub struct CrudRouterBuilder<Server: ApiServer, Repo: repositories::CRUDRepository, Schema, PrimaryKeyType, CreateSchema:OptionalSchema=NotGiven, UpdateSchema:OptionalSchema=NotGiven> {
+    repo: Repo,
+    _marker: PhantomData<(Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema)>,
+}
 
-    async fn update_item_route(
-        state: State<Arc<Mutex<Self>>>,
-        id: Path<PrimaryKeyType>,
-        item_json: Json<serde_json::Value>
-    ) -> Json<Schema>;
+impl<Server: ApiServer, Repo: repositories::CRUDRepository> CrudRouterBuilder<Server, Repo, NotGiven, NotGiven> {
+    pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType>{
+        CrudRouterBuilder{
+            repo: self.repo,
+            _marker: Default::default()
+        }
+    }
+}
 
-    async fn delete_item_route(
-        state: State<Arc<Mutex<Self>>>,
-        id: Path<PrimaryKeyType>
-    );
+impl<Server: ApiServer, Repo: repositories::CRUDRepository, Schema, PrimaryKeyType, UpdateSchema: OptionalSchema> CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType, NotGiven, UpdateSchema> {
+    pub fn create_schema<CreateSchema>(self) -> CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType, Given<CreateSchema>, UpdateSchema>{
+        CrudRouterBuilder{
+            repo: self.repo,
+            _marker: Default::default()
+        }
+    }
 
-    async fn delete_all_items_route(
-        state: State<Arc<Mutex<Self>>>
-    ) -> Json<usize>;
+}
+
+impl<Server: ApiServer, Repo: repositories::CRUDRepository, Schema, PrimaryKeyType, CreateSchema: OptionalSchema> CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType, CreateSchema, NotGiven> {
+    pub fn update_schema<UpdateSchema>(self) -> CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType, CreateSchema, Given<UpdateSchema>>{
+        CrudRouterBuilder{
+            repo: self.repo,
+            _marker: Default::default()
+        }
+    }
+
 }

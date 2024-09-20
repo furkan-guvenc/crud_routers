@@ -1,85 +1,10 @@
 use dotenvy::dotenv;
 use std::env;
 use std::net::SocketAddr;
-use std::sync::{Arc};
-use tokio::sync::{Mutex};
-use axum::{Json, Router};
-use axum::extract::{Path, State};
-use axum::routing::get;
+use axum::Router;
 use sea_orm::*;
-use serde::Serialize;
-use seaorm_postgres::{post as post, post::Entity as Post};
-
-#[axum::debug_handler]
-async fn list_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>
-) -> Json<Vec<post::Model>> {
-
-    let state = state.lock().await;
-
-    Post::find().all(&state.connection).await.unwrap().into()
-}
-
-#[axum::debug_handler]
-async fn create_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Json(new_post_json): Json<serde_json::Value>
-) -> Json<post::Model> {
-    let state = state.lock().await;
-
-    let active_model = post::ActiveModel::from_json(new_post_json).unwrap();
-
-    active_model.insert(&state.connection).await.unwrap().into()
-}
-
-#[axum::debug_handler]
-async fn delete_all_posts_route(
-    State(state): State<Arc<Mutex<AppState>>>
-) -> Json<u64> {
-    let state = state.lock().await;
-
-    Post::delete_many().exec(&state.connection).await.unwrap().rows_affected.into()
-}
-
-
-#[axum::debug_handler]
-async fn get_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>
-) -> Json<Option<post::Model>> {
-    let state = state.lock().await;
-
-    Post::find_by_id(id).one(&state.connection).await.unwrap().into()
-
-}
-
-#[axum::debug_handler]
-async fn update_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>,
-    Json(post_json): Json<serde_json::Value>
-) -> Json<post::Model> {
-    let state = state.lock().await;
-
-    let mut post = post::ActiveModel::from_json(post_json).unwrap();
-    post.id = ActiveValue::Unchanged(id);
-    // let post: post::ActiveModel = post.into();
-    post.save(&state.connection).await.unwrap();
-
-    Post::find_by_id(id).one(&state.connection).await.unwrap().unwrap().into()
-}
-
-
-#[axum::debug_handler]
-async fn delete_post_route(
-    State(state): State<Arc<Mutex<AppState>>>,
-    Path(id): Path<i32>
-) {
-    let state = state.lock().await;
-
-    Post::delete_by_id(id).exec(&state.connection).await.unwrap();
-}
-
+use axum_crudrouter::{AxumServer, CRUDRepository, SeaOrmRepository};
+use seaorm_postgres::post;
 
 
 async fn establish_connection() -> DatabaseConnection {
@@ -89,10 +14,6 @@ async fn establish_connection() -> DatabaseConnection {
     Database::connect(&database_url)
         .await
         .expect("Error connecting to database")
-}
-
-struct AppState {
-    connection: DatabaseConnection
 }
 
 #[tokio::main]
@@ -108,12 +29,13 @@ async fn main() {
 async fn get_app() -> Router {
     let connection = establish_connection().await;
 
-    let shared_state = Arc::new(Mutex::new(AppState { connection }));
+    SeaOrmRepository::new(connection)
+        .create_router_for::<AxumServer>()
+        .schema::<post::Model, i32>()
+        .create_schema::<post::NewPost>()
+        .update_schema::<post::PostForm>()
+        .build_router()
 
-    Router::new()
-        .route("/", get(list_posts_route).post(create_posts_route).delete(delete_all_posts_route))
-        .route("/:id", get(get_post_route).put(update_post_route).delete(delete_post_route))
-        .with_state(shared_state)
 }
 
 

@@ -13,11 +13,18 @@ pub struct Model {
     pub published: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct NewPost {
     pub title: String,
     pub body: String,
     pub published: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PostForm {
+    title: Option<String>,
+    body: Option<String>,
+    published: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
