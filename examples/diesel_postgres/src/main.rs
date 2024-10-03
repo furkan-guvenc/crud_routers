@@ -3,8 +3,10 @@ use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;
 use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use axum::Router;
-use axum_crudrouter::{AxumServer, CRUDRepository, DieselRepository};
+use axum_crudrouter::{AxumServer, CrudRouterBuilder, DieselRepository};
 use diesel_postgres::models::{NewPost, Post, PostForm};
 use diesel_postgres::schema::posts;
 
@@ -30,13 +32,16 @@ async fn main() {
 
 async fn get_app() -> Router {
     let connection = establish_connection();
+    let shared_state = Arc::new(Mutex::new(
+        DieselRepository::new(connection, posts::table)
+    ));
 
-    DieselRepository::new(connection, posts::table)
-        .create_router_for::<AxumServer>()
+    CrudRouterBuilder::new::<AxumServer>()
         .schema::<Post, i32>()
         .create_schema::<NewPost>()
         .update_schema::<PostForm>()
         .build_router()
+        .with_state(shared_state)
 }
 
 #[cfg(test)]

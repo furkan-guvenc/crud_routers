@@ -9,7 +9,7 @@ use crate::servers::ApiServer;
 use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema};
 use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateRepository};
 
-pub struct AxumServer {}
+pub struct AxumServer;
 
 impl ApiServer for AxumServer {}
 
@@ -100,12 +100,10 @@ where
     UpdateSchema: DeserializeOwned + Send + 'static,
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
-    pub fn build_router(self) -> Router {
-        let shared_state = Arc::new(Mutex::new(self.repo));
+    pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         Router::new()
             .route("/", get(Self::list_items_route).post(Self::create_item_route).delete(Self::delete_all_items_route))
             .route("/:id", get(Self::get_item_route).put(Self::update_item_route).delete(Self::delete_item_route))
-            .with_state(shared_state)
     }
 }
 
@@ -116,12 +114,10 @@ where
     CreateSchema: DeserializeOwned + Send + 'static,
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
-    pub fn build_router(self) -> Router {
-        let shared_state = Arc::new(Mutex::new(self.repo));
+    pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         Router::new()
             .route("/", get(Self::list_items_route).post(Self::create_item_route).delete(Self::delete_all_items_route))
             .route("/:id", get(Self::get_item_route).delete(Self::delete_item_route))
-            .with_state(shared_state)
     }
 }
 
@@ -132,12 +128,10 @@ where
     UpdateSchema: DeserializeOwned + Send + 'static,
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
-    pub fn build_router(self) -> Router {
-        let shared_state = Arc::new(Mutex::new(self.repo));
+    pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         Router::new()
             .route("/", get(Self::list_items_route).delete(Self::delete_all_items_route))
             .route("/:id", get(Self::get_item_route).put(Self::update_item_route).delete(Self::delete_item_route))
-            .with_state(shared_state)
     }
 }
 
@@ -148,11 +142,9 @@ where
     Schema: Serialize + Send + 'static,
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
-    pub fn build_router(self) -> Router {
-        let shared_state = Arc::new(Mutex::new(self.repo));
+    pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         Router::new()
             .route("/", get(Self::list_items_route).delete(Self::delete_all_items_route))
             .route("/:id", get(Self::get_item_route).delete(Self::delete_item_route))
-            .with_state(shared_state)
     }
 }

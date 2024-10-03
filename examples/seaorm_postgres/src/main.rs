@@ -1,10 +1,13 @@
 use dotenvy::dotenv;
-use std::env;
-use std::net::SocketAddr;
-use axum::Router;
+use std::{env, io};
+use std::net::TcpListener;
+use actix_web::{App, HttpServer};
+use actix_web::dev::Server;
+use actix_web::web::Data;
 use sea_orm::*;
-use axum_crudrouter::{AxumServer, CRUDRepository, SeaOrmRepository};
-use seaorm_postgres::post;
+use tokio::sync::Mutex;
+use axum_crudrouter::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
+use seaorm_postgres::{post as post};
 
 
 async fn establish_connection() -> DatabaseConnection {
@@ -16,103 +19,147 @@ async fn establish_connection() -> DatabaseConnection {
         .expect("Error connecting to database")
 }
 
-#[tokio::main]
-async fn main() {
-    let app = get_app().await;
-
-    // run it with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8008));
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+#[actix_web::main]
+async fn main() -> io::Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:8080")
+        .expect("Could not bind TCP listener");
+    run(listener).await?.await
 }
 
-async fn get_app() -> Router {
+pub async fn run(listener: TcpListener) -> std::io::Result<Server> {
     let connection = establish_connection().await;
 
-    SeaOrmRepository::new(connection)
-        .create_router_for::<AxumServer>()
-        .schema::<post::Model, i32>()
-        .create_schema::<post::NewPost>()
-        .update_schema::<post::PostForm>()
-        .build_router()
+    let shared_state = Data::new(Mutex::new( SeaOrmRepository::new(connection)));
 
+    let server = HttpServer::new(move || {
+        App::new()
+            .app_data(shared_state.clone())
+            .service(
+                CrudRouterBuilder::new::<ActixServer>()
+                    .repository::<SeaOrmRepository>()
+                    .schema::<post::Model, i32>()
+                    .create_schema::<post::NewPost>()
+                    .update_schema::<post::PostForm>()
+                    .build_router()
+            )
+    })
+        .listen(listener)?
+        .run();
+
+    Ok(server)
 }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::get_app;
+    use std::net::TcpListener;
+    use crate::run;
 
     use serde_json::{json, Value};
-    use axum::{
-        body::Body,
-        http::{self, Request, StatusCode},
-    };
-    use http_body_util::BodyExt; // for `collect`
-    use tower::ServiceExt; // for `call`, `oneshot`, and `ready`
+    use serde::Serialize;
 
-    fn delete_all_request () -> Request<Body> {
-        Request::delete("/")
-            .body(Body::empty())
-            .unwrap()
+    struct TestApp{
+        pub address: String,
+        pub api_client: reqwest::Client
     }
 
-    fn get_post_request () -> Request<Body> {
-        Request::post("/")
-            .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-            .body(Body::from(
-                serde_json::to_vec(&json!({"title": "Post", "body": "Body", "published": false})).unwrap(),
-            ))
-            .unwrap()
+    impl TestApp {
+        pub fn new(address: String) -> Self{
+            Self{
+                address,
+                api_client: reqwest::Client::new()
+            }
+        }
+        async fn list_all(&self) -> reqwest::Response {
+            self.api_client.get(&self.address)
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
+        async fn get(&self, id: i64) -> reqwest::Response {
+            self.api_client.get(&format!("{}/{}", &self.address, id))
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
+        async fn create(&self, body: impl Serialize) -> reqwest::Response {
+            self.api_client.post(&format!("{}", &self.address))
+                .header("Content-Type", mime::APPLICATION_JSON.as_ref())
+                .body(reqwest::Body::from(serde_json::to_vec(&body).unwrap()))
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
+        async fn update(&self, id: i64, body: impl Serialize) -> reqwest::Response {
+            self.api_client.put(&format!("{}/{}", &self.address, id))
+                .body(reqwest::Body::from(serde_json::to_vec(&body).unwrap()))
+                .header("Content-Type", mime::APPLICATION_JSON.as_ref())
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
+        async fn delete(&self, id: i64) -> reqwest::Response {
+            self.api_client.delete(&format!("{}/{}", &self.address, id))
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
+        async fn delete_all(&self) -> reqwest::Response {
+            self.api_client.delete(&self.address)
+                .send()
+                .await
+                .expect("Failed to execute request.")
+        }
     }
 
+    async fn spawn_app() -> TestApp{
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .expect("Could not bind TCP listener");
+        let port = listener.local_addr().unwrap().port();
+        let server = run(listener).await.expect("Failed to bind address");
+        let _ = tokio::spawn(server);
+
+        TestApp::new(format!("http://127.0.0.1:{}", port))
+    }
 
     #[tokio::test]
     async fn e2e(){
-        let app = get_app().await;
+        let app = spawn_app().await;
 
         // no posts in the beginning
-        let response = app.clone()
-            .oneshot(Request::get("/").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
+        let response = app.list_all().await;
 
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let body = response.into_body().collect().await.unwrap().to_bytes();
-        assert_eq!(&body[..], b"[]");
+        assert!(response.status().is_success());
+        assert_eq!("[]", response.text().await.unwrap());
 
         // insert a post
-        let response = app.clone().oneshot(get_post_request())
-            .await
-            .unwrap();
+        let response = app.create(
+            &json!({"title": "Post", "body": "Body", "published": false})
+        ).await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.bytes().await.unwrap();
         let body: Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(*body.get("title").unwrap(), json!("Post"));
         assert_eq!(*body.get("body").unwrap(), json!("Body"));
         assert_eq!(*body.get("published").unwrap(), json!(false));
 
         // insert 2 more and get all
-        let _ = app.clone().oneshot(get_post_request())
-            .await
-            .unwrap();
+        let _ = app.create(
+            &json!({"title": "Post", "body": "Body", "published": false})
+        ).await;
 
-        let _ = app.clone().oneshot(get_post_request())
-            .await
-            .unwrap();
+        let _ = app.create(
+            &json!({"title": "Post", "body": "Body", "published": false})
+        ).await;
 
         // get all 3 of them
-        let response = app.clone()
-            .oneshot(Request::get("/").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
+        let response = app.list_all().await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.bytes().await.unwrap();
         let mut body: Value = serde_json::from_slice(&body).unwrap();
         let posts = body.as_array_mut().unwrap();
         assert_eq!(posts.len(), 3);
@@ -126,28 +173,14 @@ mod tests {
         let first_post_id = posts[0].as_object_mut().unwrap().remove("id").unwrap().as_i64().unwrap();
         *posts[0].get_mut("body").unwrap() = json!("First Post Body");
 
-        let response = app.clone()
-            .oneshot(
-                Request::put(format!("/{}", first_post_id))
-                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                    .body(Body::from(
-                        posts[0].to_string(),
-                    ))
-                    .unwrap()
-            )
-            .await
-            .unwrap();
+        let response = app.update(first_post_id, &posts[0]).await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
         // get the updated one
-        let response = app.clone()
-            .oneshot(Request::get(format!("/{}", first_post_id)).body(Body::empty()).unwrap())
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let response = app.get(first_post_id).await;
+        assert!(response.status().is_success());
+        let body = response.bytes().await.unwrap();
         let body: Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(*body.get("id").unwrap(), json!(first_post_id));
         assert_eq!(*body.get("title").unwrap(), json!("Post"));
@@ -155,34 +188,23 @@ mod tests {
         assert_eq!(*body.get("published").unwrap(), json!(false));
 
         // delete first one
-        let response = app.clone()
-            .oneshot(
-                Request::delete(format!("/{}", first_post_id)).body(Body::empty()).unwrap()
-            )
-            .await
-            .unwrap();
+        let response = app.delete(first_post_id).await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
         // try to get the deleted one
-        let response = app.clone()
-            .oneshot(Request::get(format!("/{}", first_post_id)).body(Body::empty()).unwrap())
-            .await
-            .unwrap();
+        let response = app.get(first_post_id).await;
 
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        assert!(response.status().is_success());
+        let body = response.bytes().await.unwrap();
         assert_eq!(&body[..], b"null");
 
         // get 2 of them
-        let response = app.clone()
-            .oneshot(Request::get("/").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
+        let response = app.list_all().await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.bytes().await.unwrap();
         let mut body: Value = serde_json::from_slice(&body).unwrap();
         let posts = body.as_array_mut().unwrap();
         assert_eq!(posts.len(), 2);
@@ -193,21 +215,16 @@ mod tests {
         }
 
         // delete all
-        let response = app.clone().oneshot(delete_all_request())
-            .await
-            .unwrap();
+        let response = app.delete_all().await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
         // all posts should be deleted
-        let response = app
-            .oneshot(Request::get("/").body(Body::empty()).unwrap())
-            .await
-            .unwrap();
+        let response = app.list_all().await;
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.status().is_success());
 
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.bytes().await.unwrap();
         assert_eq!(&body[..], b"[]");
     }
 

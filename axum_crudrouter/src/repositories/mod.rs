@@ -3,19 +3,8 @@ mod sea_orm;
 
 pub use sea_orm::SeaOrmRepository;
 pub use diesel::DieselRepository;
-use crate::{CrudRouterBuilder, NotGiven};
-use crate::servers::ApiServer;
 
-pub trait CRUDRepository{
-    fn create_router_for<Server: ApiServer>(self) -> CrudRouterBuilder<Server, Self, NotGiven, NotGiven>
-    where Self: Sized
-    {
-        CrudRouterBuilder{
-            repo: self,
-            _marker: Default::default(),
-        }
-    }
-}
+pub trait CRUDRepository{}
 
 pub trait ReadDeleteRepository<Schema, PrimaryKeyType>: CRUDRepository {
     fn list_items(&mut self) -> impl std::future::Future<Output = Vec<Schema>> + Send;
