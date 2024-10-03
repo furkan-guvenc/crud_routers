@@ -7,7 +7,7 @@ use actix_web::web::Data;
 use sea_orm::*;
 use tokio::sync::Mutex;
 use axum_crudrouter::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
-use seaorm_postgres::{post as post};
+use seaorm_actix::{post as post};
 
 
 async fn establish_connection() -> DatabaseConnection {

@@ -1,5 +1,5 @@
 [package]
-name = "seaorm_postgres"
+name = "seaorm_actix"
 version = "0.1.0"
 edition = "2021"
 
