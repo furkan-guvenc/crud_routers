@@ -1,5 +1,5 @@
 [package]
-name = "diesel_postgres"
+name = "diesel_axum"
 version = "0.1.0"
 edition = "2021"
 
