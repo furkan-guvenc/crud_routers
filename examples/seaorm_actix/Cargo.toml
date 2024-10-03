@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum_crudrouter = { path = "../../axum_crudrouter" }
+rust_crudrouter = { path = "../../rust_crudrouter" }
 
 sea-orm = { version = "1.0.0", features = ["runtime-tokio-native-tls", "sqlx-postgres"] }
 actix-web = "4"

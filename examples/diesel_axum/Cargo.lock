@@ -404,19 +404,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum_crudrouter"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "axum",
- "diesel",
- "sea-orm",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.73"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -800,11 +787,11 @@ name = "diesel_axum"
 version = "0.1.0"
 dependencies = [
  "axum",
- "axum_crudrouter",
  "diesel",
  "dotenvy",
  "http-body-util",
  "mime",
+ "rust_crudrouter",
  "serde",
  "serde_json",
  "tokio",
@@ -1998,6 +1985,19 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "rust_crudrouter"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "axum",
+ "diesel",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

@@ -6,7 +6,7 @@ use actix_web::dev::Server;
 use actix_web::web::Data;
 use sea_orm::*;
 use tokio::sync::Mutex;
-use axum_crudrouter::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
+use rust_crudrouter::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
 use seaorm_actix::{post as post};
 
 

@@ -6,7 +6,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use axum::Router;
-use axum_crudrouter::{AxumServer, CrudRouterBuilder, DieselRepository};
+use rust_crudrouter::{AxumServer, CrudRouterBuilder, DieselRepository};
 use diesel_axum::models::{NewPost, Post, PostForm};
 use diesel_axum::schema::posts;
 
