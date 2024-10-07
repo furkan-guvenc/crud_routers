@@ -17,3 +17,4 @@ mime = "0.3.17"
 [dev-dependencies]
 http-body-util = "0.1"
 tower = { version = "0.5", features = ["util"] }
+test_utils = { path = "../../test_utils" }
