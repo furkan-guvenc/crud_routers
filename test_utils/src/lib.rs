@@ -13,11 +13,20 @@ impl TestApp {
             api_client: reqwest::Client::new()
         }
     }
-    async fn list_all(&self) -> reqwest::Response {
-        self.api_client.get(&self.address)
-            .send()
-            .await
-            .expect("Failed to execute request.")
+    async fn list_all(&self, skip: Option<u32>, limit: Option<u32>) -> reqwest::Response {
+        let mut r = self.api_client.get(&self.address);
+        if let Some(skip) = skip {
+            r = r.query(&[("skip", skip.to_string())]);
+        }
+
+        if let Some(limit) = limit {
+            r = r.query(&[("limit", limit.to_string())]);
+        }
+
+        r
+        .send()
+        .await
+        .expect("Failed to execute request.")
     }
     async fn get(&self, id: i64) -> reqwest::Response {
         self.api_client.get(&format!("{}/{}", &self.address, id))
@@ -57,7 +66,7 @@ impl TestApp {
 
 pub async fn e2e_test(app: TestApp){
     // no posts in the beginning
-    let response = app.list_all().await;
+    let response = app.list_all(None, None).await;
 
     assert!(response.status().is_success());
     assert_eq!("[]", response.text().await.unwrap());
@@ -85,7 +94,7 @@ pub async fn e2e_test(app: TestApp){
     ).await;
 
     // get all 3 of them
-    let response = app.list_all().await;
+    let response = app.list_all(None, None).await;
 
     assert!(response.status().is_success());
 
@@ -99,8 +108,22 @@ pub async fn e2e_test(app: TestApp){
         assert_eq!(*body.get("published").unwrap(), json!(false));
     }
 
+    let post_ids = posts.iter_mut().map(|p| p.as_object_mut().unwrap().remove("id").unwrap().as_i64().unwrap()).collect::<Vec<i64>>();
+
+    // skip 1 and limit 1
+    let response = app.list_all(Some(1), Some(1)).await;
+
+    assert!(response.status().is_success());
+
+    let body = response.bytes().await.unwrap();
+    let mut body: Value = serde_json::from_slice(&body).unwrap();
+    let posts = body.as_array_mut().unwrap();
+    assert_eq!(posts.len(), 1);
+
+    assert_eq!(posts[0].get("id").unwrap().as_i64().unwrap(), post_ids[1]);
+
     // update the first one
-    let first_post_id = posts[0].as_object_mut().unwrap().remove("id").unwrap().as_i64().unwrap();
+    let first_post_id = post_ids[0];
     *posts[0].get_mut("body").unwrap() = json!("First Post Body");
 
     let response = app.update(first_post_id, &posts[0]).await;
@@ -130,7 +153,7 @@ pub async fn e2e_test(app: TestApp){
     assert_eq!(&body[..], b"null");
 
     // get 2 of them
-    let response = app.list_all().await;
+    let response = app.list_all(None, None).await;
 
     assert!(response.status().is_success());
 
@@ -150,7 +173,7 @@ pub async fn e2e_test(app: TestApp){
     assert!(response.status().is_success());
 
     // all posts should be deleted
-    let response = app.list_all().await;
+    let response = app.list_all(None, None).await;
 
     assert!(response.status().is_success());
 

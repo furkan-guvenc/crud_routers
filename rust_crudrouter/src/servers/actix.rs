@@ -1,10 +1,10 @@
 use actix_web::{web, HttpResponse, Scope};
-use actix_web::web::{Data, Json, Path};
+use actix_web::web::{Data, Json, Path, Query};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tokio::sync::Mutex;
 use crate::servers::ApiServer;
-use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema};
+use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema, Pagination};
 use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateRepository};
 
 pub struct ActixServer {}
@@ -21,11 +21,12 @@ where
 {
 
     async fn list_items_route(
-        state: Data<Mutex<R>>
+        state: Data<Mutex<R>>,
+        pagination: Query<Pagination>
     ) -> Json<Vec<Schema>>{
         let mut state = state.lock().await;
 
-        Json(R::list_items(&mut state).await)
+        Json(R::list_items(&mut state, pagination.into_inner()).await)
     }
     async fn get_item_route(
         state: Data<Mutex<R>>,

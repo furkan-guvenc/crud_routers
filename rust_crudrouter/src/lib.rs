@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use serde::Deserialize;
 
 mod servers;
 pub mod repositories;
@@ -59,4 +60,10 @@ impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: OptionalSchema> CrudRou
         }
     }
 
+}
+
+#[derive(Deserialize)]
+pub struct Pagination{
+    skip: Option<u64>,
+    limit: Option<u64>,
 }

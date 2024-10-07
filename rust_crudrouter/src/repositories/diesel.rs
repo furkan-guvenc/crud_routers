@@ -1,14 +1,15 @@
 use diesel::associations::HasTable;
 use diesel::connection::LoadConnection;
-use diesel::helper_types::{delete, Find, Limit, Update};
+use diesel::helper_types::{delete, Find, Limit, Offset, Update};
 use diesel::internal::table_macro::{FromClause, SelectStatement, StaticQueryFragment};
 use diesel::prelude::*;
 use diesel::query_builder::{AsQuery, InsertStatement, IntoUpdateTarget, QueryFragment, QueryId};
 use diesel::query_dsl::filter_dsl::FindDsl;
-use diesel::query_dsl::methods::{ExecuteDsl, LimitDsl};
+use diesel::query_dsl::methods::{ExecuteDsl, LimitDsl, OffsetDsl};
 use diesel::query_dsl::LoadQuery;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use crate::Pagination;
 use crate::repositories::{CRUDRepository, CreateRepository, ReadDeleteRepository, UpdateRepository};
 
 pub struct DieselRepository<DBConnection, SchemaTable> {
@@ -42,6 +43,9 @@ where
 
     // for list_items
     Schema: Serialize + Send + 'static,
+    for<'a> Offset<Limit<SelectStatement<FromClause<SchemaTable>>>>: LoadQuery<'a, DBConnection, Schema>,
+    for<'a> Limit<SelectStatement<FromClause<SchemaTable>>>: LoadQuery<'a, DBConnection, Schema>,
+    for<'a> Offset<SelectStatement<FromClause<SchemaTable>>>: LoadQuery<'a, DBConnection, Schema>,
     for<'a> SchemaTable: LoadQuery<'a, DBConnection, Schema>,
 
     // for get_item
@@ -58,10 +62,24 @@ where
     delete<SchemaTable>: ExecuteDsl<DBConnection>
 
 {
-    async fn list_items(&mut self) -> Vec<Schema> {
-        self.table
-            .load::<Schema>(&mut self.connection)
-            .expect("Error loading items")
+    async fn list_items(&mut self, pagination: Pagination) -> Vec<Schema> {
+        let result = match (pagination.limit, pagination.skip) {
+            (Some(limit), Some(skip)) =>
+                OffsetDsl::offset(
+                    LimitDsl::limit(self.table.as_query(), limit as i64),
+                    skip as i64
+                )
+                .load::<Schema>(&mut self.connection),
+            (Some(limit), None) =>
+                LimitDsl::limit(self.table.as_query(), limit as i64)
+                .load::<Schema>(&mut self.connection),
+            (None, Some(skip)) =>
+                OffsetDsl::offset(self.table.as_query(), skip as i64)
+                .load::<Schema>(&mut self.connection),
+            (None, None) =>
+                self.table.load::<Schema>(&mut self.connection),
+        };
+        result.expect("Error loading items")
     }
 
     async fn get_item(&mut self, id: PrimaryKeyType) -> Option<Schema> {

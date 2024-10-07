@@ -3,11 +3,12 @@ mod sea_orm;
 
 pub use sea_orm::SeaOrmRepository;
 pub use diesel::DieselRepository;
+use crate::Pagination;
 
 pub trait CRUDRepository{}
 
 pub trait ReadDeleteRepository<Schema, PrimaryKeyType>: CRUDRepository {
-    fn list_items(&mut self) -> impl std::future::Future<Output = Vec<Schema>> + Send;
+    fn list_items(&mut self, pagination: Pagination) -> impl std::future::Future<Output = Vec<Schema>> + Send;
     fn get_item(&mut self, id: PrimaryKeyType) -> impl std::future::Future<Output = Option<Schema>> + Send;
     fn delete_item(&mut self, id: PrimaryKeyType) -> impl std::future::Future<Output = ()> + Send;
     fn delete_all_items(&mut self) -> impl std::future::Future<Output = usize> + Send;

@@ -1,12 +1,12 @@
 use std::sync::Arc;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::{Json, Router};
 use axum::routing::get;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tokio::sync::Mutex;
 use crate::servers::ApiServer;
-use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema};
+use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema, Pagination};
 use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateRepository};
 
 pub struct AxumServer;
@@ -23,11 +23,12 @@ where
 {
 
     async fn list_items_route(
-        state: State<Arc<Mutex<R>>>
+        state: State<Arc<Mutex<R>>>,
+        Query(pagination): Query<Pagination>
     ) -> Json<Vec<Schema>>{
         let mut state = state.lock().await;
 
-        R::list_items(&mut state).await.into()
+        R::list_items(&mut state, pagination).await.into()
     }
     async fn get_item_route(
         state: State<Arc<Mutex<R>>>,
