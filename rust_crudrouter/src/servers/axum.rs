@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tokio::sync::Mutex;
 use crate::servers::ApiServer;
-use crate::{CrudRouterBuilder, Given, NotGiven, OptionalSchema, Pagination};
+use crate::{CrudRouterBuilder, Assigned, Empty, Assignable, Pagination};
 use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateRepository};
 
 pub struct AxumServer;
@@ -17,8 +17,8 @@ impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<Ax
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + Send + 'static,
     Schema: Serialize + Send + 'static,
-    CreateSchema: OptionalSchema + 'static,
-    UpdateSchema: OptionalSchema + 'static,
+    CreateSchema: Assignable + 'static,
+    UpdateSchema: Assignable + 'static,
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
 
@@ -57,7 +57,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: OptionalSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Given<CreateSchema>, UpdateSchema>
+impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignable> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Assigned<CreateSchema>, UpdateSchema>
 where
     R: CreateRepository<Schema, CreateSchema>,
     Schema: Serialize + Send,
@@ -74,7 +74,7 @@ where
 
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema: OptionalSchema, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, CreateSchema, Given<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, CreateSchema, Assigned<UpdateSchema>>
 where
     R: UpdateRepository<Schema, PrimaryKeyType, UpdateSchema>,
     Schema: Serialize + Send,
@@ -93,7 +93,7 @@ where
 }
 
 
-impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Given<CreateSchema>, Given<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Assigned<CreateSchema>, Assigned<UpdateSchema>>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + CreateRepository<Schema, CreateSchema> + UpdateRepository<Schema, PrimaryKeyType, UpdateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -108,7 +108,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Given<CreateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Assigned<CreateSchema>>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + CreateRepository<Schema, CreateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -122,7 +122,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, NotGiven, Given<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, UpdateSchema> CrudRouterBuilder<AxumServer, R, Schema, PrimaryKeyType, Empty, Assigned<UpdateSchema>>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + UpdateRepository<Schema, PrimaryKeyType, UpdateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
