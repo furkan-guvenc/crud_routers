@@ -126,7 +126,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<Assigned<AxumServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<Assigned<AxumServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Empty>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + CreateRepository<Schema, CreateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -187,7 +187,7 @@ where
 }
 
 
-impl<R, Schema, PrimaryKeyType> CrudRouterBuilder<Assigned<AxumServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>>
+impl<R, Schema, PrimaryKeyType> CrudRouterBuilder<Assigned<AxumServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + Send + 'static,
     Schema: Serialize + Send + 'static,

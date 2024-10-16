@@ -14,7 +14,7 @@ pub trait Assignable{}
 impl Assignable for Empty{}
 impl<T> Assignable for Assigned<T>{}
 
-pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable=Empty, UpdateSchema:Assignable=Empty> {
+pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> {
     list_items_route_disabled: bool,
     get_item_route_disabled: bool,
     delete_item_route_disabled: bool,
@@ -25,7 +25,7 @@ pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, Prima
 }
 
 impl<Repo> CrudRouterBuilder<Empty, Repo, Empty, Empty, Empty, Empty> {
-    pub fn new<Server: ApiServer>() -> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty> {
+    pub fn new<Server: ApiServer>() -> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
         CrudRouterBuilder {
             list_items_route_disabled: false,
             get_item_route_disabled: false,
@@ -38,8 +38,8 @@ impl<Repo> CrudRouterBuilder<Empty, Repo, Empty, Empty, Empty, Empty> {
     }
 }
 
-impl<Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<Assigned<Server>, Empty, Schema, PrimaryKeyType> {
-    pub fn repository<Repo: CRUDRepository>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Schema, PrimaryKeyType>{
+impl<Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<Assigned<Server>, Empty, Schema, PrimaryKeyType, Empty, Empty> {
+    pub fn repository<Repo: CRUDRepository>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Schema, PrimaryKeyType, Empty, Empty>{
         CrudRouterBuilder{
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
@@ -52,8 +52,8 @@ impl<Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<A
     }
 }
 
-impl<Server, Repo> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty> {
-    pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>>{
+impl<Server, Repo> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
+    pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>{
         CrudRouterBuilder{
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
