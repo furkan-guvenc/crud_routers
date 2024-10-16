@@ -14,7 +14,7 @@ pub trait Assignable{}
 impl Assignable for Empty{}
 impl<T> Assignable for Assigned<T>{}
 
-pub struct CrudRouterBuilder<Server, Repo, Schema, PrimaryKeyType, CreateSchema:Assignable=Empty, UpdateSchema:Assignable=Empty> {
+pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable=Empty, UpdateSchema:Assignable=Empty> {
     _marker: PhantomData<(Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema)>,
 }
 
@@ -26,7 +26,7 @@ impl<Repo> CrudRouterBuilder<Empty, Repo, Empty, Empty, Empty, Empty> {
     }
 }
 
-impl<Server, Schema, PrimaryKeyType> CrudRouterBuilder<Assigned<Server>, Empty, Schema, PrimaryKeyType> {
+impl<Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<Assigned<Server>, Empty, Schema, PrimaryKeyType> {
     pub fn repository<Repo>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Schema, PrimaryKeyType>{
         CrudRouterBuilder{
             _marker: Default::default()
