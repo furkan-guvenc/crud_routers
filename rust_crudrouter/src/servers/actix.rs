@@ -101,13 +101,28 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Scope {
-        web::scope("")
-            .route("/", web::get().to(Self::list_items_route))
-            .route("/", web::post().to(Self::create_item_route))
-            .route("/", web::delete().to(Self::delete_all_items_route))
-            .route("/{id}", web::get().to(Self::get_item_route))
-            .route("/{id}", web::put().to(Self::update_item_route))
-            .route("/{id}", web::delete().to(Self::delete_item_route))
+        let mut s = web::scope("");
+
+        if !self.list_items_route_disabled {
+            s = s.route("/", web::get().to(Self::list_items_route))
+        }
+        if !self.create_item_route_disabled {
+            s = s.route("/", web::post().to(Self::create_item_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            s = s.route("/{id}", web::get().to(Self::get_item_route))
+        }
+        if !self.update_item_route_disabled {
+            s = s.route("/{id}", web::put().to(Self::update_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+        }
+
+        s
     }
 }
 
@@ -119,12 +134,25 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Scope {
-        web::scope("")
-            .route("/", web::get().to(Self::list_items_route))
-            .route("/", web::post().to(Self::create_item_route))
-            .route("/", web::delete().to(Self::delete_all_items_route))
-            .route("/{id}", web::get().to(Self::get_item_route))
-            .route("/{id}", web::delete().to(Self::delete_item_route))
+        let mut s = web::scope("");
+
+        if !self.list_items_route_disabled {
+            s = s.route("/", web::get().to(Self::list_items_route))
+        }
+        if !self.create_item_route_disabled {
+            s = s.route("/", web::post().to(Self::create_item_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            s = s.route("/{id}", web::get().to(Self::get_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+        }
+
+        s
     }
 }
 
@@ -136,12 +164,25 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Scope {
-        web::scope("")
-            .route("/", web::get().to(Self::list_items_route))
-            .route("/", web::delete().to(Self::delete_all_items_route))
-            .route("/{id}", web::get().to(Self::get_item_route))
-            .route("/{id}", web::put().to(Self::update_item_route))
-            .route("/{id}", web::delete().to(Self::delete_item_route))
+        let mut s = web::scope("");
+
+        if !self.list_items_route_disabled {
+            s = s.route("/", web::get().to(Self::list_items_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            s = s.route("/{id}", web::get().to(Self::get_item_route))
+        }
+        if !self.update_item_route_disabled {
+            s = s.route("/{id}", web::put().to(Self::update_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+        }
+
+        s
     }
 }
 
@@ -153,10 +194,21 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Scope {
-        web::scope("")
-            .route("/", web::get().to(Self::list_items_route))
-            .route("/", web::delete().to(Self::delete_all_items_route))
-            .route("/{id}", web::get().to(Self::get_item_route))
-            .route("/{id}", web::delete().to(Self::delete_item_route))
+        let mut s = web::scope("");
+
+        if !self.list_items_route_disabled {
+            s = s.route("/", web::get().to(Self::list_items_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            s = s.route("/{id}", web::get().to(Self::get_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+        }
+
+        s
     }
 }

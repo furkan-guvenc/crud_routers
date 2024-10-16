@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use axum::extract::{Path, Query, State};
-use axum::{Json, Router};
-use axum::routing::get;
+use axum::{routing, Json, Router};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use tokio::sync::Mutex;
@@ -102,9 +101,28 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
-        Router::new()
-            .route("/", get(Self::list_items_route).post(Self::create_item_route).delete(Self::delete_all_items_route))
-            .route("/:id", get(Self::get_item_route).put(Self::update_item_route).delete(Self::delete_item_route))
+        let mut r = Router::new();
+
+        if !self.list_items_route_disabled {
+            r = r.route("/", routing::get(Self::list_items_route))
+        }
+        if !self.create_item_route_disabled {
+            r = r.route("/", routing::post(Self::create_item_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            r = r.route("/", routing::delete(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            r = r.route("/:id", routing::get(Self::get_item_route))
+        }
+        if !self.update_item_route_disabled {
+            r = r.route("/:id", routing::put(Self::update_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            r = r.route("/:id", routing::delete(Self::delete_item_route))
+        }
+
+        r
     }
 }
 
@@ -116,9 +134,25 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
-        Router::new()
-            .route("/", get(Self::list_items_route).post(Self::create_item_route).delete(Self::delete_all_items_route))
-            .route("/:id", get(Self::get_item_route).delete(Self::delete_item_route))
+        let mut r = Router::new();
+
+        if !self.list_items_route_disabled {
+            r = r.route("/", routing::get(Self::list_items_route))
+        }
+        if !self.create_item_route_disabled {
+            r = r.route("/", routing::post(Self::create_item_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            r = r.route("/", routing::delete(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            r = r.route("/:id", routing::get(Self::get_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            r = r.route("/:id", routing::delete(Self::delete_item_route))
+        }
+
+        r
     }
 }
 
@@ -130,9 +164,25 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
-        Router::new()
-            .route("/", get(Self::list_items_route).delete(Self::delete_all_items_route))
-            .route("/:id", get(Self::get_item_route).put(Self::update_item_route).delete(Self::delete_item_route))
+        let mut r = Router::new();
+
+        if !self.list_items_route_disabled {
+            r = r.route("/", routing::get(Self::list_items_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            r = r.route("/", routing::delete(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            r = r.route("/:id", routing::get(Self::get_item_route))
+        }
+        if !self.update_item_route_disabled {
+            r = r.route("/:id", routing::put(Self::update_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            r = r.route("/:id", routing::delete(Self::delete_item_route))
+        }
+
+        r
     }
 }
 
@@ -144,8 +194,21 @@ where
     PrimaryKeyType: DeserializeOwned + Send + 'static,
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
-        Router::new()
-            .route("/", get(Self::list_items_route).delete(Self::delete_all_items_route))
-            .route("/:id", get(Self::get_item_route).delete(Self::delete_item_route))
+        let mut r = Router::new();
+
+        if !self.list_items_route_disabled {
+            r = r.route("/", routing::get(Self::list_items_route))
+        }
+        if !self.delete_all_items_route_disabled {
+            r = r.route("/", routing::delete(Self::delete_all_items_route))
+        }
+        if !self.get_item_route_disabled {
+            r = r.route("/:id", routing::get(Self::get_item_route))
+        }
+        if !self.delete_item_route_disabled {
+            r = r.route("/:id", routing::delete(Self::delete_item_route))
+        }
+
+        r
     }
 }
