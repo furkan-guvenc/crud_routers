@@ -1,8 +1,14 @@
+
+#[cfg(feature = "diesel")]
 mod diesel;
+#[cfg(feature = "sea-orm")]
 mod sea_orm;
 
+#[cfg(feature = "sea-orm")]
 pub use sea_orm::SeaOrmRepository;
+#[cfg(feature = "diesel")]
 pub use diesel::DieselRepository;
+
 use crate::Pagination;
 
 pub trait CRUDRepository{}

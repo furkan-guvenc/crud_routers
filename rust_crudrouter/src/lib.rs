@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use serde::Deserialize;
 
 mod servers;
-pub mod repositories;
+mod repositories;
 pub use repositories::*;
 pub use servers::*;
 

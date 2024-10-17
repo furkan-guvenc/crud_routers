@@ -5,11 +5,17 @@ edition = "2021"
 
 [dependencies]
 # databases
-diesel = { version = "2" }
-sea-orm = { version = "1.0.0" }
+diesel = { version = "2" , optional = true}
+sea-orm = { version = "1.0.0", optional = true }
 
-axum = { version = "0.7.5"}
-actix-web = "4"
+axum = { version = "0.7.5", optional = true}
+actix-web = {version = "4", optional = true}
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
+
+[features]
+axum = ["dep:axum"]
+actix = ["dep:actix-web"]
+diesel = ["dep:diesel"]
+sea-orm = ["dep:sea-orm"]
