@@ -36,7 +36,7 @@ impl<DBConnection, SchemaTable> CRUDRepository for DieselRepository<DBConnection
 impl<DBConnection, SchemaTable, Schema, PrimaryKeyType> ReadDeleteRepository<Schema, PrimaryKeyType> for DieselRepository<DBConnection, SchemaTable>
 where
     DBConnection: Connection + LoadConnection + 'static,
-    SchemaTable: AsQuery<Query=SelectStatement<FromClause<SchemaTable>>> + QueryFragment<DBConnection::Backend> + StaticQueryFragment + Table + QueryId + Copy + Send + 'static,
+    SchemaTable: AsQuery<Query=SelectStatement<FromClause<SchemaTable>>> + QueryFragment<DBConnection::Backend> + StaticQueryFragment<Component=diesel::internal::table_macro::Identifier<'static>> + Table + QueryId + Copy + Send + 'static,
 
     PrimaryKeyType: Send + DeserializeOwned + 'static,
     SchemaTable::PrimaryKey: EqAll<PrimaryKeyType>,
@@ -62,6 +62,10 @@ where
     delete<SchemaTable>: ExecuteDsl<DBConnection>
 
 {
+    fn get_table_name() -> String {
+        <SchemaTable as StaticQueryFragment>::STATIC_COMPONENT.0.to_string()
+    }
+
     async fn list_items(&mut self, pagination: Pagination) -> Vec<Schema> {
         let result = match (pagination.limit, pagination.skip) {
             (Some(limit), Some(skip)) =>

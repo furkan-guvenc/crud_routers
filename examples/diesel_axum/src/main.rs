@@ -23,7 +23,7 @@ mod tests {
             run(listener).await.unwrap();
         });
 
-        TestApp::new(format!("http://127.0.0.1:{}", port))
+        TestApp::new(format!("http://127.0.0.1:{}", port), "base/api")
     }
 
     #[tokio::test]

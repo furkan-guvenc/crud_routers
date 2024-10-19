@@ -14,6 +14,7 @@ use crate::Pagination;
 pub trait CRUDRepository{}
 
 pub trait ReadDeleteRepository<Schema, PrimaryKeyType>: CRUDRepository {
+    fn get_table_name() -> String;
     fn list_items(&mut self, pagination: Pagination) -> impl std::future::Future<Output = Vec<Schema>> + Send;
     fn get_item(&mut self, id: PrimaryKeyType) -> impl std::future::Future<Output = Option<Schema>> + Send;
     fn delete_item(&mut self, id: PrimaryKeyType) -> impl std::future::Future<Output = ()> + Send;

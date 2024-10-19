@@ -1,5 +1,5 @@
 use crate::repositories::{CRUDRepository, ReadDeleteRepository, CreateRepository, UpdateRepository};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, FromQueryResult, IntoActiveModel, ModelTrait, PrimaryKeyTrait, QuerySelect, TryIntoModel};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityName, EntityTrait, FromQueryResult, IntoActiveModel, ModelTrait, PrimaryKeyTrait, QuerySelect, TryIntoModel};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use crate::Pagination;
@@ -25,6 +25,11 @@ where
     <Schema::Entity as EntityTrait>::ActiveModel: ActiveModelTrait<Entity=Schema::Entity> + From<Schema> + TryIntoModel<Schema> + Send,
     <<Schema::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType: DeserializeOwned + Clone
 {
+    fn get_table_name() -> String {
+        let entity = Schema::Entity::default();
+        entity.table_name().to_string()
+    }
+
     async fn list_items(&mut self, pagination: Pagination) -> Vec<Schema> {
         Schema::Entity::find().offset(pagination.skip).limit(pagination.limit).all(&self.connection).await.unwrap()
     }

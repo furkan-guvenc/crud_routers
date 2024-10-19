@@ -23,6 +23,7 @@ pub fn run(listener: TcpListener) -> Serve<Router, Router> {
         .schema::<Post, i32>()
         .create_schema::<NewPost>()
         .update_schema::<PostForm>()
+        .prefix("base/api")
         .build_router()
         .with_state(shared_state);
 

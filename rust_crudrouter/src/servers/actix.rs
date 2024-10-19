@@ -102,24 +102,25 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
+        let paths = get_paths_from_prefix(self.get_prefix());
 
         if !self.list_items_route_disabled {
-            s = s.route("/", web::get().to(Self::list_items_route))
+            s = s.route(&paths.0, web::get().to(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            s = s.route("/", web::post().to(Self::create_item_route))
+            s = s.route(&paths.0, web::post().to(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route("/{id}", web::get().to(Self::get_item_route))
+            s = s.route(&paths.1, web::get().to(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            s = s.route("/{id}", web::put().to(Self::update_item_route))
+            s = s.route(&paths.1, web::put().to(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -135,21 +136,22 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
+        let paths = get_paths_from_prefix(self.get_prefix());
 
         if !self.list_items_route_disabled {
-            s = s.route("/", web::get().to(Self::list_items_route))
+            s = s.route(&paths.0, web::get().to(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            s = s.route("/", web::post().to(Self::create_item_route))
+            s = s.route(&paths.0, web::post().to(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route("/{id}", web::get().to(Self::get_item_route))
+            s = s.route(&paths.1, web::get().to(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -165,21 +167,22 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
+        let paths = get_paths_from_prefix(self.get_prefix());
 
         if !self.list_items_route_disabled {
-            s = s.route("/", web::get().to(Self::list_items_route))
+            s = s.route(&paths.0, web::get().to(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route("/{id}", web::get().to(Self::get_item_route))
+            s = s.route(&paths.1, web::get().to(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            s = s.route("/{id}", web::put().to(Self::update_item_route))
+            s = s.route(&paths.1, web::put().to(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -195,20 +198,28 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
+        let paths = get_paths_from_prefix(self.get_prefix());
 
         if !self.list_items_route_disabled {
-            s = s.route("/", web::get().to(Self::list_items_route))
+            s = s.route(&paths.0, web::get().to(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route("/", web::delete().to(Self::delete_all_items_route))
+            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route("/{id}", web::get().to(Self::get_item_route))
+            s = s.route(&paths.1, web::get().to(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route("/{id}", web::delete().to(Self::delete_item_route))
+            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
         }
 
         s
     }
+}
+
+fn get_paths_from_prefix(prefix: &str) -> (String, String) {
+    (
+        format!("/{}/", prefix),
+        format!("/{}/{{id}}", prefix),
+    )
 }

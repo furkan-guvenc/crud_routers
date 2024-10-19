@@ -7,7 +7,10 @@ pub struct TestApp{
 }
 
 impl TestApp {
-    pub fn new(address: String) -> Self{
+    pub fn new(mut address: String, prefix: &str) -> Self{
+        address.push('/');
+        address.push_str(prefix);
+        address.push('/');
         Self{
             address,
             api_client: reqwest::Client::new()
@@ -29,13 +32,13 @@ impl TestApp {
         .expect("Failed to execute request.")
     }
     async fn get(&self, id: i64) -> reqwest::Response {
-        self.api_client.get(&format!("{}/{}", &self.address, id))
+        self.api_client.get(&format!("{}{}", &self.address, id))
             .send()
             .await
             .expect("Failed to execute request.")
     }
     async fn create(&self, body: impl Serialize) -> reqwest::Response {
-        self.api_client.post(&format!("{}", &self.address))
+        self.api_client.post(&self.address)
             .header("Content-Type", mime::APPLICATION_JSON.as_ref())
             .body(reqwest::Body::from(serde_json::to_vec(&body).unwrap()))
             .send()
@@ -43,7 +46,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
     async fn update(&self, id: i64, body: impl Serialize) -> reqwest::Response {
-        self.api_client.put(&format!("{}/{}", &self.address, id))
+        self.api_client.put(&format!("{}{}", &self.address, id))
             .body(reqwest::Body::from(serde_json::to_vec(&body).unwrap()))
             .header("Content-Type", mime::APPLICATION_JSON.as_ref())
             .send()
@@ -51,7 +54,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
     async fn delete(&self, id: i64) -> reqwest::Response {
-        self.api_client.delete(&format!("{}/{}", &self.address, id))
+        self.api_client.delete(&format!("{}{}", &self.address, id))
             .send()
             .await
             .expect("Failed to execute request.")

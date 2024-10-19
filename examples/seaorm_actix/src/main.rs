@@ -22,7 +22,7 @@ mod tests {
         let server = run(listener).await.expect("Failed to bind address");
         let _ = tokio::spawn(server);
 
-        TestApp::new(format!("http://127.0.0.1:{}", port))
+        TestApp::new(format!("http://127.0.0.1:{}", port), "posts")
     }
 
     #[tokio::test]
