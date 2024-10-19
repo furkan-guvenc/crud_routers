@@ -11,7 +11,7 @@ pub struct ActixServer {}
 
 impl ApiServer for ActixServer {}
 
-impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema>
+impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignable> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>
+impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignable> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>
 where
     R: CreateRepository<Schema, CreateSchema>,
     Schema: Serialize + Send,
@@ -73,7 +73,7 @@ where
 
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>
 where
     R: UpdateRepository<Schema, PrimaryKeyType, UpdateSchema>,
     Schema: Serialize + Send,
@@ -92,7 +92,7 @@ where
 }
 
 
-impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + CreateRepository<Schema, CreateSchema> + UpdateRepository<Schema, PrimaryKeyType, UpdateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -127,7 +127,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Empty>
+impl<R, Schema, PrimaryKeyType, CreateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Empty>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + CreateRepository<Schema, CreateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -158,7 +158,7 @@ where
     }
 }
 
-impl<R, Schema, PrimaryKeyType, UpdateSchema> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Assigned<UpdateSchema>>
+impl<R, Schema, PrimaryKeyType, UpdateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Assigned<UpdateSchema>>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + UpdateRepository<Schema, PrimaryKeyType, UpdateSchema> + Send + 'static,
     Schema: Serialize + Send + 'static,
@@ -190,7 +190,7 @@ where
 }
 
 
-impl<R, Schema, PrimaryKeyType> CrudRouterBuilder<Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>
+impl<R, Schema, PrimaryKeyType> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>
 where
     R: ReadDeleteRepository<Schema, PrimaryKeyType> + Send + 'static,
     Schema: Serialize + Send + 'static,

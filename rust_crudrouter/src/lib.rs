@@ -14,8 +14,8 @@ pub trait Assignable{}
 impl Assignable for Empty{}
 impl<T> Assignable for Assigned<T>{}
 
-pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> {
-    prefix: Option<String>,
+pub struct CrudRouterBuilder<'a, Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> {
+    prefix: Option<&'a str>,
     list_items_route_disabled: bool,
     get_item_route_disabled: bool,
     delete_item_route_disabled: bool,
@@ -25,8 +25,8 @@ pub struct CrudRouterBuilder<Server: Assignable, Repo, Schema: Assignable, Prima
     _marker: PhantomData<(Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema)>,
 }
 
-impl<Repo> CrudRouterBuilder<Empty, Repo, Empty, Empty, Empty, Empty> {
-    pub fn new<Server: ApiServer>() -> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
+impl<'a, Repo> CrudRouterBuilder<'a, Empty, Repo, Empty, Empty, Empty, Empty> {
+    pub fn new<Server: ApiServer>() -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
         CrudRouterBuilder {
             prefix: None,
             list_items_route_disabled: false,
@@ -40,10 +40,10 @@ impl<Repo> CrudRouterBuilder<Empty, Repo, Empty, Empty, Empty, Empty> {
     }
 }
 
-impl <Server, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> CrudRouterBuilder<Assigned<Server>, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> {
-    pub fn prefix(self, prefix: impl Into<String>) -> Self{
+impl <'a, Server, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> CrudRouterBuilder<'a, Assigned<Server>, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> {
+    pub fn prefix(self, prefix: &'a str) -> Self{
         CrudRouterBuilder{
-            prefix: Some(prefix.into()),
+            prefix: Some(prefix),
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -55,23 +55,8 @@ impl <Server, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema
     }
 }
 
-impl<Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<Assigned<Server>, Empty, Schema, PrimaryKeyType, Empty, Empty> {
-    pub fn repository<Repo: CRUDRepository>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Schema, PrimaryKeyType, Empty, Empty>{
-        CrudRouterBuilder{
-            prefix: self.prefix,
-            _marker: Default::default(),
-            list_items_route_disabled: self.list_items_route_disabled,
-            get_item_route_disabled: self.get_item_route_disabled,
-            delete_item_route_disabled: self.delete_item_route_disabled,
-            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
-            create_item_route_disabled: self.create_item_route_disabled,
-            update_item_route_disabled: self.update_item_route_disabled,
-        }
-    }
-}
-
-impl<Server, Repo> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
-    pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>{
+impl<'a, Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuilder<'a, Assigned<Server>, Empty, Schema, PrimaryKeyType, Empty, Empty> {
+    pub fn repository<Repo: CRUDRepository>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Schema, PrimaryKeyType, Empty, Empty>{
         CrudRouterBuilder{
             prefix: self.prefix,
             _marker: Default::default(),
@@ -85,8 +70,8 @@ impl<Server, Repo> CrudRouterBuilder<Assigned<Server>, Repo, Empty, Empty, Empty
     }
 }
 
-impl<Server, Repo, Schema, PrimaryKeyType, UpdateSchema: Assignable> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, UpdateSchema> {
-    pub fn create_schema<CreateSchema>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>{
+impl<'a, Server, Repo> CrudRouterBuilder<'a, Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
+    pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>{
         CrudRouterBuilder{
             prefix: self.prefix,
             _marker: Default::default(),
@@ -100,9 +85,24 @@ impl<Server, Repo, Schema, PrimaryKeyType, UpdateSchema: Assignable> CrudRouterB
     }
 }
 
-impl<Server: Assignable, Repo: ReadDeleteRepository<Schema, PrimaryKeyType>, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema: Assignable> CrudRouterBuilder<Server, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema> {
+impl<'a, Server, Repo, Schema, PrimaryKeyType, UpdateSchema: Assignable> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, UpdateSchema> {
+    pub fn create_schema<CreateSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>{
+        CrudRouterBuilder{
+            prefix: self.prefix,
+            _marker: Default::default(),
+            list_items_route_disabled: self.list_items_route_disabled,
+            get_item_route_disabled: self.get_item_route_disabled,
+            delete_item_route_disabled: self.delete_item_route_disabled,
+            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
+            create_item_route_disabled: self.create_item_route_disabled,
+            update_item_route_disabled: self.update_item_route_disabled,
+        }
+    }
+}
+
+impl<Server: Assignable, Repo: ReadDeleteRepository<Schema, PrimaryKeyType>, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema: Assignable> CrudRouterBuilder<'_, Server, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema> {
     fn get_prefix(&self) -> &str{
-        if let Some(prefix) = &self.prefix {
+        if let Some(prefix) = self.prefix {
             prefix
         } else {
             Repo::get_table_name().leak()
@@ -112,8 +112,8 @@ impl<Server: Assignable, Repo: ReadDeleteRepository<Schema, PrimaryKeyType>, Sch
 
 }
 
-impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Empty> {
-    pub fn update_schema<UpdateSchema>(self) -> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>{
+impl<'a, Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Empty> {
+    pub fn update_schema<UpdateSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>{
         CrudRouterBuilder{
             prefix: self.prefix,
             _marker: Default::default(),
@@ -127,7 +127,7 @@ impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable> CrudRouterB
     }
 }
 
-impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema: Assignable> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema> {
+impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema: Assignable> CrudRouterBuilder<'_, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema> {
     pub fn disable_list_items_route(self) -> Self{
         Self {
             list_items_route_disabled: true,
@@ -157,7 +157,7 @@ impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchem
     }
 }
 
-impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignable> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema> {
+impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignable> CrudRouterBuilder<'_, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema> {
     pub fn disable_create_item_route(self) -> Self{
         Self {
             create_item_route_disabled: true,
@@ -166,7 +166,7 @@ impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema, UpdateSchema: Assignabl
     }
 }
 
-impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema> CrudRouterBuilder<Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>> {
+impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchema> CrudRouterBuilder<'_, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>> {
     pub fn disable_update_item_route(self) -> Self{
         Self {
             update_item_route_disabled: true,
@@ -214,7 +214,7 @@ mod tests {
     impl CRUDRepository for Repo {}
     struct TestServer;
     impl ApiServer for TestServer {}
-    impl CrudRouterBuilder<Assigned<TestServer>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>
+    impl CrudRouterBuilder<'_, Assigned<TestServer>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>
     {
         pub fn test_get_prefix(&self) -> &str {
             self.get_prefix()
@@ -288,7 +288,7 @@ mod tests {
 
         assert_eq!(b.get_prefix(), "test_table_name");
 
-        let b = b.prefix("test_prefix".to_string());
+        let b = b.prefix("test_prefix");
         assert_eq!(b.get_prefix(), "test_prefix");
     }
 
