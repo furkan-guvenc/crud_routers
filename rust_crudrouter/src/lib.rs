@@ -3,19 +3,29 @@ use serde::Deserialize;
 
 mod servers;
 mod repositories;
+#[cfg(feature = "openapi")]
+mod openapi;
+
 pub use repositories::*;
 pub use servers::*;
 
 pub struct Empty;
 pub struct Assigned<T>(PhantomData<T>);
 
-pub trait Assignable{}
+pub trait Assignable{
+    const IS_ASSIGNED: bool;
+}
 
-impl Assignable for Empty{}
-impl<T> Assignable for Assigned<T>{}
+impl Assignable for Empty{
+    const IS_ASSIGNED: bool = false;
+}
+impl<T> Assignable for Assigned<T>{
+    const IS_ASSIGNED: bool = true;
+}
 
 pub struct CrudRouterBuilder<'a, Server: Assignable, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSchema:Assignable, UpdateSchema:Assignable> {
     prefix: Option<&'a str>,
+    tag: Option<&'a str>,
     list_items_route_disabled: bool,
     get_item_route_disabled: bool,
     delete_item_route_disabled: bool,
@@ -29,6 +39,7 @@ impl<'a, Repo> CrudRouterBuilder<'a, Empty, Repo, Empty, Empty, Empty, Empty> {
     pub fn new<Server: ApiServer>() -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
         CrudRouterBuilder {
             prefix: None,
+            tag: None,
             list_items_route_disabled: false,
             get_item_route_disabled: false,
             delete_item_route_disabled: false,
@@ -44,6 +55,22 @@ impl <'a, Server, Repo, Schema: Assignable, PrimaryKeyType: Assignable, CreateSc
     pub fn prefix(self, prefix: &'a str) -> Self{
         CrudRouterBuilder{
             prefix: Some(prefix),
+            tag: self.tag,
+            _marker: Default::default(),
+            list_items_route_disabled: self.list_items_route_disabled,
+            get_item_route_disabled: self.get_item_route_disabled,
+            delete_item_route_disabled: self.delete_item_route_disabled,
+            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
+            create_item_route_disabled: self.create_item_route_disabled,
+            update_item_route_disabled: self.update_item_route_disabled,
+        }
+    }
+
+    #[cfg(feature = "openapi")]
+    pub fn tag(self, tag: &'a str) -> Self{
+        CrudRouterBuilder{
+            prefix: self.prefix,
+            tag: Some(tag),
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -59,6 +86,7 @@ impl<'a, Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuild
     pub fn repository<Repo: CRUDRepository>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Schema, PrimaryKeyType, Empty, Empty>{
         CrudRouterBuilder{
             prefix: self.prefix,
+            tag: self.tag,
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -71,9 +99,26 @@ impl<'a, Server, Schema: Assignable, PrimaryKeyType: Assignable> CrudRouterBuild
 }
 
 impl<'a, Server, Repo> CrudRouterBuilder<'a, Assigned<Server>, Repo, Empty, Empty, Empty, Empty> {
+    #[cfg(not(feature = "openapi"))]
     pub fn schema<Schema, PrimaryKeyType>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>{
         CrudRouterBuilder{
             prefix: self.prefix,
+            tag: self.tag,
+            _marker: Default::default(),
+            list_items_route_disabled: self.list_items_route_disabled,
+            get_item_route_disabled: self.get_item_route_disabled,
+            delete_item_route_disabled: self.delete_item_route_disabled,
+            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
+            create_item_route_disabled: self.create_item_route_disabled,
+            update_item_route_disabled: self.update_item_route_disabled,
+        }
+    }
+
+    #[cfg(feature = "openapi")]
+    pub fn schema<Schema: utoipa::ToSchema, PrimaryKeyType>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, Empty>{
+        CrudRouterBuilder{
+            prefix: self.prefix,
+            tag: self.tag,
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -86,9 +131,26 @@ impl<'a, Server, Repo> CrudRouterBuilder<'a, Assigned<Server>, Repo, Empty, Empt
 }
 
 impl<'a, Server, Repo, Schema, PrimaryKeyType, UpdateSchema: Assignable> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Empty, UpdateSchema> {
+    #[cfg(not(feature = "openapi"))]
     pub fn create_schema<CreateSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>{
         CrudRouterBuilder{
             prefix: self.prefix,
+            tag: self.tag,
+            _marker: Default::default(),
+            list_items_route_disabled: self.list_items_route_disabled,
+            get_item_route_disabled: self.get_item_route_disabled,
+            delete_item_route_disabled: self.delete_item_route_disabled,
+            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
+            create_item_route_disabled: self.create_item_route_disabled,
+            update_item_route_disabled: self.update_item_route_disabled,
+        }
+    }
+
+    #[cfg(feature = "openapi")]
+    pub fn create_schema<CreateSchema: utoipa::ToSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, UpdateSchema>{
+        CrudRouterBuilder{
+            prefix: self.prefix,
+            tag: self.tag,
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -108,14 +170,29 @@ impl<Server: Assignable, Repo: ReadDeleteRepository<Schema, PrimaryKeyType>, Sch
             Repo::get_table_name().leak()
         }
     }
-
-
 }
 
 impl<'a, Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Empty> {
+    #[cfg(not(feature = "openapi"))]
     pub fn update_schema<UpdateSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>{
         CrudRouterBuilder{
             prefix: self.prefix,
+            tag: self.tag,
+            _marker: Default::default(),
+            list_items_route_disabled: self.list_items_route_disabled,
+            get_item_route_disabled: self.get_item_route_disabled,
+            delete_item_route_disabled: self.delete_item_route_disabled,
+            delete_all_items_route_disabled: self.delete_all_items_route_disabled,
+            create_item_route_disabled: self.create_item_route_disabled,
+            update_item_route_disabled: self.update_item_route_disabled,
+        }
+    }
+
+    #[cfg(feature = "openapi")]
+    pub fn update_schema<UpdateSchema: utoipa::ToSchema>(self) -> CrudRouterBuilder<'a, Assigned<Server>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, Assigned<UpdateSchema>>{
+        CrudRouterBuilder{
+            prefix: self.prefix,
+            tag: self.tag,
             _marker: Default::default(),
             list_items_route_disabled: self.list_items_route_disabled,
             get_item_route_disabled: self.get_item_route_disabled,
@@ -176,6 +253,7 @@ impl<Server, Repo, Schema, PrimaryKeyType, CreateSchema: Assignable, UpdateSchem
 }
 
 #[derive(Deserialize)]
+#[cfg_attr(feature = "openapi", derive(utoipa::IntoParams))]
 pub struct Pagination{
     skip: Option<u64>,
     limit: Option<u64>,
@@ -213,7 +291,11 @@ mod tests {
     }
     impl CRUDRepository for Repo {}
     struct TestServer;
-    impl ApiServer for TestServer {}
+    impl ApiServer for TestServer {
+        fn get_id_path(prefix: &str) -> String {
+            todo!()
+        }
+    }
     impl CrudRouterBuilder<'_, Assigned<TestServer>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>
     {
         pub fn test_get_prefix(&self) -> &str {

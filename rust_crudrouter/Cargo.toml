@@ -13,9 +13,11 @@ actix-web = {version = "4", optional = true}
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
+utoipa = { version = "5.1.1" , optional = true}
 
 [features]
 axum = ["dep:axum"]
 actix = ["dep:actix-web"]
 diesel = ["dep:diesel"]
 sea-orm = ["dep:sea-orm"]
+openapi = ["dep:utoipa"]
