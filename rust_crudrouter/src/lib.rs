@@ -274,26 +274,26 @@ mod tests {
         }
 
         async fn list_items(&mut self, _pagination: Pagination) -> Vec<Schema> {
-            todo!()
+            unimplemented!()
         }
 
         async fn get_item(&mut self, _id: PrimaryKeyType) -> Option<Schema> {
-            todo!()
+            unimplemented!()
         }
 
         async fn delete_item(&mut self, _id: PrimaryKeyType) {
-            todo!()
+            unimplemented!()
         }
 
         async fn delete_all_items(&mut self) -> usize {
-            todo!()
+            unimplemented!()
         }
     }
     impl CRUDRepository for Repo {}
     struct TestServer;
     impl ApiServer for TestServer {
         fn get_id_path(prefix: &str) -> String {
-            todo!()
+            unimplemented!()
         }
     }
     impl CrudRouterBuilder<'_, Assigned<TestServer>, Repo, Assigned<Schema>, Assigned<PrimaryKeyType>, Assigned<CreateSchema>, Assigned<UpdateSchema>>

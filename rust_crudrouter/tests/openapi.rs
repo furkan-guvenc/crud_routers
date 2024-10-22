@@ -36,26 +36,26 @@ impl ReadDeleteRepository<Post, PrimaryKeyType> for Repo {
     }
 
     async fn list_items(&mut self, _pagination: Pagination) -> Vec<Post> {
-        todo!()
+        unimplemented!()
     }
 
     async fn get_item(&mut self, _id: PrimaryKeyType) -> Option<Post> {
-        todo!()
+        unimplemented!()
     }
 
     async fn delete_item(&mut self, _id: PrimaryKeyType) {
-        todo!()
+        unimplemented!()
     }
 
     async fn delete_all_items(&mut self) -> usize {
-        todo!()
+        unimplemented!()
     }
 }
 
 struct TestServer;
 impl ApiServer for TestServer {
     fn get_id_path(prefix: &str) -> String {
-        todo!()
+        unimplemented!()
     }
 }
 
