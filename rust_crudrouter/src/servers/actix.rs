@@ -9,7 +9,11 @@ use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateReposito
 
 pub struct ActixServer {}
 
-impl ApiServer for ActixServer {}
+impl ApiServer for ActixServer {
+    fn get_id_path(prefix: &str) -> String {
+        format!("/{}/{{id}}", prefix)
+    }
+}
 
 impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<'_, Assigned<ActixServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema>
 where
@@ -102,25 +106,27 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = ActixServer::get_path(&prefix);
+        let id_path = ActixServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            s = s.route(&paths.0, web::get().to(Self::list_items_route))
+            s = s.route(&path, web::get().to(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            s = s.route(&paths.0, web::post().to(Self::create_item_route))
+            s = s.route(&path, web::post().to(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
+            s = s.route(&path, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route(&paths.1, web::get().to(Self::get_item_route))
+            s = s.route(&id_path, web::get().to(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            s = s.route(&paths.1, web::put().to(Self::update_item_route))
+            s = s.route(&id_path, web::put().to(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
+            s = s.route(&id_path, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -136,22 +142,24 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = ActixServer::get_path(&prefix);
+        let id_path = ActixServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            s = s.route(&paths.0, web::get().to(Self::list_items_route))
+            s = s.route(&path, web::get().to(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            s = s.route(&paths.0, web::post().to(Self::create_item_route))
+            s = s.route(&path, web::post().to(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
+            s = s.route(&path, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route(&paths.1, web::get().to(Self::get_item_route))
+            s = s.route(&id_path, web::get().to(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
+            s = s.route(&id_path, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -167,22 +175,24 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = ActixServer::get_path(&prefix);
+        let id_path = ActixServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            s = s.route(&paths.0, web::get().to(Self::list_items_route))
+            s = s.route(&path, web::get().to(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
+            s = s.route(&path, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route(&paths.1, web::get().to(Self::get_item_route))
+            s = s.route(&id_path, web::get().to(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            s = s.route(&paths.1, web::put().to(Self::update_item_route))
+            s = s.route(&id_path, web::put().to(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
+            s = s.route(&id_path, web::delete().to(Self::delete_item_route))
         }
 
         s
@@ -198,28 +208,23 @@ where
 {
     pub fn build_router(self) -> Scope {
         let mut s = web::scope("");
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = ActixServer::get_path(&prefix);
+        let id_path = ActixServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            s = s.route(&paths.0, web::get().to(Self::list_items_route))
+            s = s.route(&path, web::get().to(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            s = s.route(&paths.0, web::delete().to(Self::delete_all_items_route))
+            s = s.route(&path, web::delete().to(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            s = s.route(&paths.1, web::get().to(Self::get_item_route))
+            s = s.route(&id_path, web::get().to(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            s = s.route(&paths.1, web::delete().to(Self::delete_item_route))
+            s = s.route(&id_path, web::delete().to(Self::delete_item_route))
         }
 
         s
     }
-}
-
-fn get_paths_from_prefix(prefix: &str) -> (String, String) {
-    (
-        format!("/{}/", prefix),
-        format!("/{}/{{id}}", prefix),
-    )
 }

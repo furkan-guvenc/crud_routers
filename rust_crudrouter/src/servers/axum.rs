@@ -10,7 +10,11 @@ use crate::repositories::{CreateRepository, ReadDeleteRepository, UpdateReposito
 
 pub struct AxumServer;
 
-impl ApiServer for AxumServer {}
+impl ApiServer for AxumServer {
+    fn get_id_path(prefix: &str) -> String {
+        format!("/{}/:id", prefix)
+    }
+}
 
 impl<R, Schema, PrimaryKeyType, CreateSchema, UpdateSchema> CrudRouterBuilder<'_, Assigned<AxumServer>, R, Assigned<Schema>, Assigned<PrimaryKeyType>, CreateSchema, UpdateSchema>
 where
@@ -102,25 +106,27 @@ where
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         let mut r = Router::new();
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = AxumServer::get_path(&prefix);
+        let id_path = AxumServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            r = r.route(&paths.0, routing::get(Self::list_items_route))
+            r = r.route(&path, routing::get(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            r = r.route(&paths.0, routing::post(Self::create_item_route))
+            r = r.route(&path, routing::post(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            r = r.route(&paths.0, routing::delete(Self::delete_all_items_route))
+            r = r.route(&path, routing::delete(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            r = r.route(&paths.1, routing::get(Self::get_item_route))
+            r = r.route(&id_path, routing::get(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            r = r.route(&paths.1, routing::put(Self::update_item_route))
+            r = r.route(&id_path, routing::put(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            r = r.route(&paths.1, routing::delete(Self::delete_item_route))
+            r = r.route(&id_path, routing::delete(Self::delete_item_route))
         }
 
         r
@@ -136,22 +142,24 @@ where
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         let mut r = Router::new();
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = AxumServer::get_path(&prefix);
+        let id_path = AxumServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            r = r.route(&paths.0, routing::get(Self::list_items_route))
+            r = r.route(&path, routing::get(Self::list_items_route))
         }
         if !self.create_item_route_disabled {
-            r = r.route(&paths.0, routing::post(Self::create_item_route))
+            r = r.route(&path, routing::post(Self::create_item_route))
         }
         if !self.delete_all_items_route_disabled {
-            r = r.route(&paths.0, routing::delete(Self::delete_all_items_route))
+            r = r.route(&path, routing::delete(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            r = r.route(&paths.1, routing::get(Self::get_item_route))
+            r = r.route(&id_path, routing::get(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            r = r.route(&paths.1, routing::delete(Self::delete_item_route))
+            r = r.route(&id_path, routing::delete(Self::delete_item_route))
         }
 
         r
@@ -167,22 +175,24 @@ where
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         let mut r = Router::new();
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = AxumServer::get_path(&prefix);
+        let id_path = AxumServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            r = r.route(&paths.0, routing::get(Self::list_items_route))
+            r = r.route(&path, routing::get(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            r = r.route(&paths.0, routing::delete(Self::delete_all_items_route))
+            r = r.route(&path, routing::delete(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            r = r.route(&paths.1, routing::get(Self::get_item_route))
+            r = r.route(&id_path, routing::get(Self::get_item_route))
         }
         if !self.update_item_route_disabled {
-            r = r.route(&paths.1, routing::put(Self::update_item_route))
+            r = r.route(&id_path, routing::put(Self::update_item_route))
         }
         if !self.delete_item_route_disabled {
-            r = r.route(&paths.1, routing::delete(Self::delete_item_route))
+            r = r.route(&id_path, routing::delete(Self::delete_item_route))
         }
 
         r
@@ -198,28 +208,23 @@ where
 {
     pub fn build_router(self) -> Router<Arc<Mutex<R>>> {
         let mut r = Router::new();
-        let paths = get_paths_from_prefix(self.get_prefix());
+        let prefix = self.get_prefix();
+        let path = AxumServer::get_path(&prefix);
+        let id_path = AxumServer::get_id_path(&prefix);
 
         if !self.list_items_route_disabled {
-            r = r.route(&paths.0, routing::get(Self::list_items_route))
+            r = r.route(&path, routing::get(Self::list_items_route))
         }
         if !self.delete_all_items_route_disabled {
-            r = r.route(&paths.0, routing::delete(Self::delete_all_items_route))
+            r = r.route(&path, routing::delete(Self::delete_all_items_route))
         }
         if !self.get_item_route_disabled {
-            r = r.route(&paths.1, routing::get(Self::get_item_route))
+            r = r.route(&id_path, routing::get(Self::get_item_route))
         }
         if !self.delete_item_route_disabled {
-            r = r.route(&paths.1, routing::delete(Self::delete_item_route))
+            r = r.route(&id_path, routing::delete(Self::delete_item_route))
         }
 
         r
     }
-}
-
-fn get_paths_from_prefix(prefix: &str) -> (String, String) {
-    (
-        format!("/{}/", prefix),
-        format!("/{}/:id", prefix),
-    )
 }

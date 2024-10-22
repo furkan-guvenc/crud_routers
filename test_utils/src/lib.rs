@@ -10,7 +10,6 @@ impl TestApp {
     pub fn new(mut address: String, prefix: &str) -> Self{
         address.push('/');
         address.push_str(prefix);
-        address.push('/');
         Self{
             address,
             api_client: reqwest::Client::new()
@@ -32,7 +31,7 @@ impl TestApp {
         .expect("Failed to execute request.")
     }
     async fn get(&self, id: i64) -> reqwest::Response {
-        self.api_client.get(&format!("{}{}", &self.address, id))
+        self.api_client.get(&format!("{}/{}", &self.address, id))
             .send()
             .await
             .expect("Failed to execute request.")
@@ -46,7 +45,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
     async fn update(&self, id: i64, body: impl Serialize) -> reqwest::Response {
-        self.api_client.put(&format!("{}{}", &self.address, id))
+        self.api_client.put(&format!("{}/{}", &self.address, id))
             .body(reqwest::Body::from(serde_json::to_vec(&body).unwrap()))
             .header("Content-Type", mime::APPLICATION_JSON.as_ref())
             .send()
@@ -54,7 +53,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
     async fn delete(&self, id: i64) -> reqwest::Response {
-        self.api_client.delete(&format!("{}{}", &self.address, id))
+        self.api_client.delete(&format!("{}/{}", &self.address, id))
             .send()
             .await
             .expect("Failed to execute request.")
@@ -72,7 +71,7 @@ pub async fn e2e_test(app: TestApp){
     let response = app.list_all(None, None).await;
 
     assert!(response.status().is_success());
-    assert_eq!("[]", response.text().await.unwrap());
+    assert_eq!("[]", response.text().await.unwrap(), "All posts have to be deleted in db");
 
     // insert a post
     let response = app.create(
