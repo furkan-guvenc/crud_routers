@@ -6,7 +6,7 @@ use actix_web::web::Data;
 use dotenvy::dotenv;
 use sea_orm::{Database, DatabaseConnection};
 use tokio::sync::Mutex;
-use rust_crudrouter::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
+use crud_routers::{ActixServer, CrudRouterBuilder, SeaOrmRepository};
 
 pub mod post;
 

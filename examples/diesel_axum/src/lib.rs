@@ -11,7 +11,7 @@ use tokio::net::TcpListener;
 use tokio::sync::Mutex;
 use utoipa::openapi::{InfoBuilder, OpenApiBuilder};
 use utoipa_swagger_ui::SwaggerUi;
-use rust_crudrouter::{AxumServer, CrudRouterBuilder, DieselRepository};
+use crud_routers::{AxumServer, CrudRouterBuilder, DieselRepository};
 use crate::models::{NewPost, Post, PostForm};
 use crate::schema::posts;
 

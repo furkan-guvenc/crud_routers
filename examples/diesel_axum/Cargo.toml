@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rust_crudrouter = { path = "../../rust_crudrouter", features = ["axum", "diesel", "openapi"] }
+crud_routers = { path = "../../crud_routers", features = ["axum", "diesel", "openapi"] }
 
 diesel = { version = "2", features = ["postgres"] }
 axum = { version = "0.7.5", features = ["macros"]}

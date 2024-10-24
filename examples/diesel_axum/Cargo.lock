@@ -242,6 +242,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
 
 [[package]]
+name = "crud_routers"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "diesel",
+ "serde",
+ "serde_json",
+ "tokio",
+ "utoipa",
+]
+
+[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,9 +327,9 @@ name = "diesel_axum"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "crud_routers",
  "diesel",
  "dotenvy",
- "rust_crudrouter",
  "serde",
  "serde_json",
  "test_utils",
@@ -1133,18 +1145,6 @@ checksum = "2e5347777e9aacb56039b0e1f28785929a8a3b709e87482e7442c72e7c12529d"
 dependencies = [
  "sha2",
  "walkdir",
-]
-
-[[package]]
-name = "rust_crudrouter"
-version = "0.1.0"
-dependencies = [
- "axum",
- "diesel",
- "serde",
- "serde_json",
- "tokio",
- "utoipa",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 [package]
-name = "rust_crudrouter"
+name = "crud_routers"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,7 +1,7 @@
 use std::fs;
 use utoipa::openapi::{InfoBuilder, OpenApi, OpenApiBuilder};
 use utoipa::{ToSchema};
-use rust_crudrouter::{ApiServer, CRUDRepository, CrudRouterBuilder, Pagination, ReadDeleteRepository};
+use crud_routers::{ApiServer, CRUDRepository, CrudRouterBuilder, Pagination, ReadDeleteRepository};
 
 #[derive(ToSchema)]
 pub struct Post {

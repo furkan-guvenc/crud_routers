@@ -639,6 +639,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22ec99545bb0ed0ea7bb9b8e1e9122ea386ff8a48c0922e43f36d45ab09e0e80"
 
 [[package]]
+name = "crud_routers"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2007,17 +2018,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_crudrouter"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "sea-orm",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "rust_decimal"
 version = "1.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2220,8 +2220,8 @@ name = "seaorm_actix"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "crud_routers",
  "dotenvy",
- "rust_crudrouter",
  "sea-orm",
  "serde",
  "serde_json",
