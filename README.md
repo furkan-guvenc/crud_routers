@@ -3,6 +3,9 @@
 **crud_routers** is a library to automatically generate crud routes with given schemas.
 It is orm and web framework agnostic, highly inspired by [fastapi-crudrouter](https://github.com/awtkns/fastapi-crudrouter).
 
+[![Crates.io](https://img.shields.io/crates/v/crud_routers)](https://crates.io/crates/crud_routers)
+[![Documentation](https://docs.rs/crud_routers/badge.svg)](https://docs.rs/crud_routers)
+
 ## Basic usage with Axum and Diesel
 
 ### Installation
