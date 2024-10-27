@@ -1,7 +1,11 @@
 [package]
 name = "crud_routers"
+description = "Automatically create crud routes for your favorite api server and orm"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+keywords = ["crud", "api", "server", "openapi", "web"]
+repository = "https://github.com/furkan-guvenc/crud_routers"
 
 [dependencies]
 # databases
