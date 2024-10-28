@@ -81,7 +81,7 @@ let router = CrudRouterBuilder::new::<AxumServer>()
 ![Swagger UI](docs/assets/SwaggerOverview.png)
 
 ### Pagination
-Pagination is automatically paginate setup for you. You can use the `skip` and `limit` query parameters to
+Pagination is automatically setup for you. You can use the `skip` and `limit` query parameters to
 paginate your results.
 
 **Skip**:
