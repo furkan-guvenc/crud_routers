@@ -15,7 +15,7 @@ use crud_routers::{AxumServer, CrudRouterBuilder, DieselRepository};
 use crate::models::{NewPost, Post, PostForm};
 use crate::schema::posts;
 
-pub fn run(listener: TcpListener) -> Serve<Router, Router> {
+pub fn run(listener: TcpListener) -> Serve<TcpListener, Router, Router> {
     let mut openapi = OpenApiBuilder::new()
         .info(InfoBuilder::new().title("Diesel Axum example").build())
         .build();

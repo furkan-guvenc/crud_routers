@@ -12,7 +12,7 @@ pub struct AxumServer;
 
 impl ApiServer for AxumServer {
     fn get_id_path(prefix: &str) -> String {
-        format!("/{}/:id", prefix)
+        format!("/{}/{{id}}", prefix)
     }
 }
 
