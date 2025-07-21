@@ -1,0 +1,8 @@
+[workspace]
+members = ["crud_routers", "examples/*", "test_utils"]
+resolver = "2"
+
+[workspace.package]
+rust-version = "1.75"
+
+[workspace.metadata.publish]
